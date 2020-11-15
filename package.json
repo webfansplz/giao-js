@@ -1,0 +1,29 @@
+{
+  "name": "giao-js",
+  "version": "1.0.0",
+  "description": "Javascript Interpreter",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "dev": "rollup -c rollup.config.js --watch",
+    "build": "rollup -c rollup.config.js"
+  },
+  "author": "webfansplz",
+  "license": "MIT",
+  "dependencies": {
+    "acorn": "^8.0.4"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.12.1",
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "@rollup/plugin-typescript": "^6.1.0",
+    "@types/estree": "^0.0.45",
+    "@types/jest": "^26.0.15",
+    "babel-jest": "^26.6.3",
+    "jest": "^26.6.3",
+    "rollup": "^2.33.1",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.0.5"
+  }
+}
