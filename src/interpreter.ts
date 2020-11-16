@@ -7,9 +7,9 @@ class Interpreter {
   constructor(visitor: Visitor) {
     this.visitor = visitor;
   }
-  interpret(nodes: ESTree.Node) {
+  interpret(node: ESTree.Node) {
     this.createScope();
-    this.visitor.run(nodes, this.scope);
+    this.visitor.visitNode(node, this.scope);
     return this.exportResult();
   }
   createScope() {
