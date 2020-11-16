@@ -85,7 +85,6 @@ const es5 = {
   },
   Program(astPath: AstPath<ESTree.Program>) {
     const { node, scope } = astPath;
-    console.log("this", this, node);
     node.body.forEach((bodyNode) => this.visitNode(bodyNode, scope));
   },
   AssignmentExpression(astPath: AstPath<ESTree.AssignmentExpression>) {
@@ -111,16 +110,91 @@ const es5 = {
       };
     }
     return {
-      "=": (v) => ((assignVar.value = v), v),
-      "+=": (v) => ((assignVar.value = assignVar.value + v), assignVar.value),
-      "-=": (v) => ((assignVar.value = assignVar.value - v), assignVar.value),
-      "*=": (v) => ((assignVar.value = assignVar.value * v), assignVar.value),
-      "/=": (v) => ((assignVar.value = assignVar.value / v), assignVar.value),
-      "%=": (v) => ((assignVar.value = assignVar.value % v), assignVar.value),
+      "=": (v) => {
+        assignVar.value = v;
+        return v;
+      },
+      "+=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = v + value;
+        return assignVar.value;
+      },
+      "-=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = value - v;
+        return assignVar.value;
+      },
+      "*=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = v * value;
+        return assignVar.value;
+      },
+      "/=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = value / v;
+        return assignVar.value;
+      },
+      "%=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = value % v;
+        return assignVar.value;
+      },
     }[operator](this.visitNode(right, scope));
   },
-  ForStatement(node: ESTree.Node) {},
-  UpdateExpression(node: ESTree.Node) {},
-  BlockStatement(node: ESTree.Node) {},
+  ForStatement(astPath: AstPath<ESTree.ForStatement>) {
+    const { node, scope } = astPath;
+    const { init, test, update, body } = node;
+    const forScope = new Scope("block", scope);
+    for (
+      init ? this.visitNode(init, forScope) : undefined;
+      test ? this.visitNode(test, forScope) : true;
+      update ? this.visitNode(update, forScope) : undefined
+    ) {
+      this.visitNode(body, forScope);
+    }
+  },
+  UpdateExpression(astPath: AstPath<ESTree.UpdateExpression>) {
+    const { node, scope } = astPath;
+    const { prefix, argument, operator } = node;
+    let updateVar;
+    if (argument.type === "Identifier") {
+      const value = scope.search(argument.name);
+      updateVar = value;
+    } else if (argument.type === "MemberExpression") {
+      const { object, property, computed } = argument;
+      const obj = this.visitNode(object, scope);
+      const key = computed
+        ? this.visitNode(property, scope)
+        : (<ESTree.Identifier>property).name;
+      updateVar = {
+        get value() {
+          return obj[key];
+        },
+        set value(v) {
+          obj[key] = v;
+        },
+      };
+    }
+    return {
+      "++": (v) => {
+        const result = v.value;
+        v.value = result + 1;
+        return prefix ? v.value : result;
+      },
+      "--": (v) => {
+        const result = v.value;
+        v.value = result - 1;
+        return prefix ? v.value : result;
+      },
+    }[operator](updateVar);
+  },
+  BlockStatement(astPath: AstPath<ESTree.BlockStatement>) {
+    const { node, scope } = astPath;
+    const blockScope = new Scope("block", scope);
+    const { body } = node;
+    body.forEach((bodyNode) => {
+      this.visitNode(bodyNode, blockScope);
+    });
+  },
 };
 export default es5;

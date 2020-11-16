@@ -24,4 +24,15 @@ describe("giao-js es5", () => {
     `)
     ).toBeTruthy();
   });
+  test("test for loop", () => {
+    expect(
+      run(`
+      var result = 0;
+      for (var i = 0; i < 5; i++) {
+        result += 2;
+      }
+      module.exports = result;
+    `)
+    ).toBe(10);
+  });
 });

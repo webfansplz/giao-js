@@ -13,7 +13,6 @@ class Interpreter {
     return this.exportResult();
   }
   createScope() {
-    // 根作用域
     this.scope = new Scope("root");
     this.scope.defineConst("this", null);
     // 模块导出，使用commonjs
