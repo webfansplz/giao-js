@@ -380,3 +380,97 @@ export default Visitor;
 ```
 
 就这样,普通的二元运算就搞定啦!!!
+
+### 怎么找到变量?
+
+Javascript 的作用域与作用域链的概念想必大家都很熟悉了,这里就不再啰嗦了~
+
+是的,我们需要通过实现作用域来访问变量,实现作用域链来搜寻标识符。
+
+在这之前,我们先实现 Variable 类,实现变量的存取方法。
+
+```ts
+// variable.ts
+export enum Kind {
+  var = "var",
+  let = "let",
+  const = "const",
+}
+export type KindType = "var" | "let" | "const";
+export class Variable {
+  private _value: any;
+  constructor(public kind: Kind, val: any) {
+    this._value = val;
+  }
+  get value() {
+    return this._value;
+  }
+  set value(val: any) {
+    this._value = val;
+  }
+}
+```
+
+```ts
+import { Variable, Kind, KindType } from "./variable";
+
+class Scope {
+  // 父作用域
+  private parent: Scope | null;
+  // 当前作用域
+  private targetScope: { [key: string]: any };
+  constructor(public readonly type, parent?: Scope) {
+    this.parent = parent || null;
+    this.targetScope = new Map();
+  }
+  // 是否已定义
+  private hasDefinition(rawName: string): boolean {
+    return Boolean(this.search(rawName));
+  }
+  // var类型变量定义
+  public defineVar(rawName: string, value: any) {
+    let scope: Scope = this;
+    // 如果不是全局作用域且不是函数作用域,找到全局作用域,存储变量
+    // 这里就是我们常说的Hoisting (变量提升)
+    while (scope.parent && scope.type !== "function") {
+      scope = scope.parent;
+    }
+    // 存储变量
+    scope.targetScope.set(rawName, new Variable(Kind.var, value));
+  }
+  // let类型变量定义
+  public defineLet(rawName: string, value: any) {
+    this.targetScope.set(rawName, new Variable(Kind.let, value));
+  }
+  // const类型变量定义
+  public defineConst(rawName: string, value: any) {
+    this.targetScope.set(rawName, new Variable(Kind.const, value));
+  }
+  // 作用域链实现,向上查找标识符
+  public search(rawName: string): Variable | null {
+    if (this.targetScope.get(rawName)) {
+      return this.targetScope.get(rawName);
+    } else if (this.parent) {
+      return this.parent.search(rawName);
+    } else {
+      return null;
+    }
+  }
+  // 变量声明方法,变量已定义则抛出语法错误异常
+  public declare(kind: Kind | KindType, rawName: string, value: any) {
+    if (this.hasDefinition(rawName)) {
+      console.error(
+        `Uncaught SyntaxError: Identifier '${rawName}' has already been declared`
+      );
+      return true;
+    }
+    return {
+      [Kind.var]: () => this.defineVar(rawName, value),
+      [Kind.let]: () => this.defineLet(rawName, value),
+      [Kind.const]: () => this.defineConst(rawName, value),
+    }[kind]();
+  }
+}
+
+export default Scope;
+```
