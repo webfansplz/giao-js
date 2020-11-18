@@ -4,8 +4,8 @@
 
 ## 什么是解释器 (Interpreter) ?
 
-> 解释器是在运行时运行的语言求值器，它动态地执行程序的源代码。它不同于编译器。编译器将语言源代码翻译成机器代码。
-> 解释器解析源代码，从源代码生成 AST(抽象语法树)，遍历 AST 并逐个计算它们。
+> 解释器是在运行时运行的语言求值器,它动态地执行程序的源代码。它不同于编译器。编译器将语言源代码翻译成机器代码。
+> 解释器解析源代码,从源代码生成 AST(抽象语法树),遍历 AST 并逐个计算它们。
 
 ## 解释器 (Interpreter) 工作原理
 
@@ -168,7 +168,7 @@ Subject(Noun) -> Predicate -> Object
 
 - Acorn.js
 
-> A tiny, fast JavaScript parser, written completely in JavaScript. 一个完全使用 javascript 实现的，小型且快速的 javascript 解析器
+> A tiny, fast JavaScript parser, written completely in JavaScript. 一个完全使用 javascript 实现的,小型且快速的 javascript 解析器
 
 本次实践我们将使用 acorn.js ,它会帮我们进行词法分析,语法解析并转换为抽象语法树。
 
@@ -176,9 +176,9 @@ Webpack/Rollup/Babel(@babel/parser) 等第三方库也是使用 acorn.js 作为�
 
 - The Estree Spec
 
-最开始 [Mozilla JS Parser API](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Parser_API) 是 Mozilla 工程师在 Firefox 中创建的 SpiderMonkey 引擎输出 JavaScript AST 的规范文档，文档所描述的格式被用作操作 JAvaScript 源代码的通用语言。
+最开始 [Mozilla JS Parser API](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Parser_API) 是 Mozilla 工程师在 Firefox 中创建的 SpiderMonkey 引擎输出 JavaScript AST 的规范文档,文档所描述的格式被用作操作 JAvaScript 源代码的通用语言。
 
-随着 JavaScript 的发展，更多新的语法被加入，为了帮助发展这种格式以跟上 JavaScript 语言的发展。[The ESTree Spec](https://github.com/estree/estree) 就诞生了，作为参与构建和使用这些工具的人员的社区标准。
+随着 JavaScript 的发展,更多新的语法被加入,为了帮助发展这种格式以跟上 JavaScript 语言的发展。[The ESTree Spec](https://github.com/estree/estree) 就诞生了,作为参与构建和使用这些工具的人员的社区标准。
 
 acorn.js parse 返回值符合 ESTree spec 描述的 AST 对象,这里我们使用@types/estree 做类型定义。
 
@@ -237,7 +237,7 @@ export function run(code: string) {
 }
 ```
 
-### 1+1= ？
+### 实践第一节: 1+1= ？
 
 我们这节来实现 1+1 加法的解释。首先我们通过[AST explorer](https://astexplorer.net/),看看 1+1 这段代码转换后的 AST 结构。
 
@@ -247,7 +247,7 @@ export function run(code: string) {
 
 #### Program
 
-根节点,即代表一整颗抽象语法树,body 属性是一个数组，包含了多个 Statement 节点。
+根节点,即代表一整颗抽象语法树,body 属性是一个数组,包含了多个 Statement 节点。
 
 ```ts
 interface Program {
@@ -271,7 +271,7 @@ interface ExpressionStatement {
 
 #### BinaryExpression
 
-二元运算表达式节点，left 和 right 表示运算符左右的两个表达式，operator 表示一个二元运算符。
+二元运算表达式节点,left 和 right 表示运算符左右的两个表达式,operator 表示一个二元运算符。
 本节实现的重点,简单理解,我们只要拿到 operator 操作符的类型并实现,然后对 left,right 值进行求值即可。
 
 ```ts
@@ -285,7 +285,7 @@ interface BinaryExpression {
 
 #### Literal
 
-字面量，这里不是指 [] 或者 {} 这些，而是本身语义就代表了一个值的字面量，如 1，“hello”, true 这些，还有正则表达式，如 /\d?/。
+字面量,这里不是指 [] 或者 {} 这些,而是本身语义就代表了一个值的字面量,如 1,“hello”, true 这些,还有正则表达式,如 /\d?/。
 
 ```ts
 type Literal = SimpleLiteral | RegExpLiteral;
@@ -381,7 +381,7 @@ export default Visitor;
 
 就这样,普通的二元运算就搞定啦!!!
 
-### 怎么找到变量?
+### 实践第二节: 怎么找到变量?
 
 Javascript 的作用域与作用域链的概念想必大家都很熟悉了,这里就不再啰嗦了~
 
@@ -474,3 +474,210 @@ class Scope {
 
 export default Scope;
 ```
+
+以上就是变量对象,作用域及作用域链的基础实现了,接下来我们就可以定义及访问变量了。
+
+### 实践第三节: module.exports = 6
+
+我们先来看看 module.exports = 6 对应的 AST。
+
+![module-exports](./assets/module-exports.png)
+
+从语法树中我们又看到了三个陌生的节点类型,来看看它们分别代表什么意思:
+
+#### Identifier
+
+顾名思义,标识符节点,我们写 JS 时定位的变量名,函数名,属性名,都归为标识符。
+
+```ts
+interface Identifier {
+  type: "Identifier";
+  name: string;
+}
+```
+
+#### AssignmentExpression
+
+赋值表达式节点,operator 属性表示一个赋值运算符,left 和 right 是赋值运算符左右的表达式。
+
+```ts
+interface AssignmentExpression {
+  type: "AssignmentExpression";
+  operator: AssignmentOperator;
+  left: Pattern | MemberExpression;
+  right: Expression;
+}
+```
+
+#### MemberExpression
+
+成员表达式节点,即表示引用对象成员的语句,object 是引用对象的表达式节点,property 是表示属性名称,computed 如果为 false,是表示 . 来引用成员,property 应该为一个 Identifier 节点,如果 computed 属性为 true,则是 [] 来进行引用,即 property 是一个 Expression 节点,名称是表达式的结果值。
+
+```ts
+interface MemberExpression {
+  type: "MemberExpression";
+  object: Expression | Super;
+  property: Expression;
+  computed: boolean;
+  optional: boolean;
+}
+```
+
+我们先通过定义 module.exports 变量来实践我们上一节的实现。
+
+```ts
+import Scope from "./scope";
+import Visitor from "./visitor";
+import * as ESTree from "estree";
+class Interpreter {
+  private scope: Scope;
+  private visitor: Visitor;
+  constructor(visitor: Visitor) {
+    this.visitor = visitor;
+  }
+  interpret(node: ESTree.Node) {
+    this.createScope();
+    this.visitor.visitNode(node, this.scope);
+    return this.exportResult();
+  }
+  createScope() {
+    // 创建全局作用域
+    this.scope = new Scope("root");
+    // 定义module.exports
+    const $exports = {};
+    const $module = { exports: $exports };
+    this.scope.defineConst("module", $module);
+    this.scope.defineVar("exports", $exports);
+  }
+  // 模拟commonjs,对外暴露结果
+  exportResult() {
+    // 查找module变量
+    const moduleExport = this.scope.search("module");
+    // 返回module.exports值
+    return moduleExport ? moduleExport.value.exports : null;
+  }
+}
+export default Interpreter;
+```
+
+ok,下面我们来实现以上节点函数~
+
+```ts
+// standard/es5.ts 实现以上节点方法
+
+import Scope from "../scope";
+import * as ESTree from "estree";
+
+type AstPath<T> = {
+  node: T;
+  scope: Scope;
+};
+
+const es5 = {
+  // ...
+  // 这里我们定义了astPath,新增了scope作用域参数
+  // 标识符节点,我们只要通过访问作用域,访问该值即可。
+  Identifier(astPath: AstPath<ESTree.Identifier>) {
+    const { node, scope } = astPath;
+    const name = node.name;
+    // walk identifier
+    // 这个例子中查找的是module变量
+    const variable = scope.search(name);
+    // 返回我们之前定义的变量对象(module),即{ exports: $exports }
+    if (variable) return variable.value;
+  },
+  MemberExpression(astPath: AstPath<ESTree.MemberExpression>) {
+    const { node, scope } = astPath;
+    const { object, property, computed } = node;
+    // property 是表示属性名称,computed 如果为 false,property 应该为一个 Identifier 节点,如果 computed 属性为 true,即 property 是一个 Expression 节点
+    // 这里我们拿到的是exports这个key值,即属性名称
+    const prop = computed
+      ? this.visitNode(property, scope)
+      : (<ESTree.Identifier>property).name;
+    // object 表示对象,这里为module,对module进行节点访问
+    const obj = this.visitNode(object, scope);
+    // 访问module.exports值
+    return obj[prop];
+  },
+  // 赋值表达式节点
+  AssignmentExpression(astPath: AstPath<ESTree.AssignmentExpression>) {
+    const { node, scope } = astPath;
+    const { left, operator, right } = node;
+    let assignVar;
+    // LHS 处理
+    if (left.type === "Identifier") {
+      // 标识符类型 直接查找
+      const value = scope.search(left.name);
+      assignVar = value;
+    } else if (left.type === "MemberExpression") {
+      // 成员表达式类型,处理方式跟上面差不多,不同的是这边需要自定义一个变量对象的实现
+      const { object, property, computed } = left;
+      const obj = this.visitNode(object, scope);
+      const key = computed
+        ? this.visitNode(property, scope)
+        : (<ESTree.Identifier>property).name;
+      assignVar = {
+        get value() {
+          return obj[key];
+        },
+        set value(v) {
+          obj[key] = v;
+        },
+      };
+    }
+    // RHS
+    // 不同操作符处理,查询到right节点值,对left节点进行赋值。
+    return {
+      "=": (v) => {
+        assignVar.value = v;
+        return v;
+      },
+      "+=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = v + value;
+        return assignVar.value;
+      },
+      "-=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = value - v;
+        return assignVar.value;
+      },
+      "*=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = v * value;
+        return assignVar.value;
+      },
+      "/=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = value / v;
+        return assignVar.value;
+      },
+      "%=": (v) => {
+        const value = assignVar.value;
+        assignVar.value = value % v;
+        return assignVar.value;
+      },
+    }[operator](this.visitNode(right, scope));
+  },
+};
+export default es5;
+```
+
+ok,实现完毕,是时候验证一波了,上 jest 大法。
+
+```ts
+// __test__/es5.test.ts
+
+import { run } from "../src/vm";
+describe("giao-js es5", () => {
+  test("assign", () => {
+    expect(
+      run(`
+      module.exports = 6;
+    `)
+    ).toBe(6);
+  });
+}
+```
+
+![jest](./assets/jest.png)
