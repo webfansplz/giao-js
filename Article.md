@@ -237,7 +237,7 @@ export function run(code: string) {
 }
 ```
 
-### 实践第一节: 1+1= ？
+### 实践第 1 弹: 1+1= ？
 
 我们这节来实现 1+1 加法的解释。首先我们通过[AST explorer](https://astexplorer.net/),看看 1+1 这段代码转换后的 AST 结构。
 
@@ -381,7 +381,7 @@ export default Visitor;
 
 就这样,普通的二元运算就搞定啦!!!
 
-### 实践第二节: 怎么找到变量?
+### 实践第 2 弹: 怎么找到变量?
 
 Javascript 的作用域与作用域链的概念想必大家都很熟悉了,这里就不再啰嗦了~
 
@@ -477,17 +477,40 @@ export default Scope;
 
 以上就是变量对象,作用域及作用域链的基础实现了,接下来我们就可以定义及访问变量了。
 
-### 实践第三节: module.exports = 6
+### 实践第 3 弹: var age = 18
 
-我们先来看看 module.exports = 6 对应的 AST。
+![var](./assets/var.png)
 
-![module-exports](./assets/module-exports.png)
+从语法树中我们可以看到三个陌生的节点类型,来看看它们分别代表什么意思:
 
-从语法树中我们又看到了三个陌生的节点类型,来看看它们分别代表什么意思:
+#### VariableDeclaration
+
+变量声明，kind 属性表示是什么类型的声明，因为 ES6 引入了 const/let。
+declarations 表示声明的多个描述，因为我们可以这样：let a = 1, b = 2;。
+
+```ts
+interface VariableDeclaration {
+  type: "VariableDeclaration";
+  declarations: Array<VariableDeclarator>;
+  kind: "var" | "let" | "const";
+}
+```
+
+#### VariableDeclarator
+
+变量声明的描述，id 表示变量名称节点，init 表示初始值的表达式，可以为 null。
+
+```ts
+interface VariableDeclarator {
+  type: "VariableDeclarator";
+  id: Pattern;
+  init?: Expression | null;
+}
+```
 
 #### Identifier
 
-顾名思义,标识符节点,我们写 JS 时定位的变量名,函数名,属性名,都归为标识符。
+顾名思义,标识符节点,我们写 JS 时定义的变量名,函数名,属性名,都归为标识符。
 
 ```ts
 interface Identifier {
@@ -495,6 +518,59 @@ interface Identifier {
   name: string;
 }
 ```
+
+了解了对应节点的含义后,我们来进行实现:
+
+```ts
+// standard/es5.ts 实现以上节点方法
+
+import Scope from "../scope";
+import * as ESTree from "estree";
+
+type AstPath<T> = {
+  node: T;
+  scope: Scope;
+};
+
+const es5 = {
+  // ...
+  // 这里我们定义了astPath,新增了scope作用域参数
+  VariableDeclaration(astPath: AstPath<ESTree.VariableDeclaration>) {
+    const { node, scope } = astPath;
+    const { declarations, kind } = node;
+    // 上面提到,生声明可能存在多个描述(let a = 1, b = 2;),所以我们这里对它进行遍历:
+    // 这里遍历出来的每个item是VariableDeclarator节点
+    declarations.forEach((declar) => {
+      const { id, init } = <ESTree.VariableDeclarator>declar;
+      // 变量名称节点,这里拿到的是age
+      const key = (<ESTree.Identifier>id).name;
+      // 判断变量是否进行了初始化 ? 查找init节点值(Literal类型直接返回值:18) : 置为undefined;
+      const value = init ? this.visitNode(init, scope) : undefined;
+      // 根据不同的kind(var/const/let)声明进行定义,即var age = 18
+      scope.declare(kind, key, value);
+    });
+  },
+  // 标识符节点,我们只要通过访问作用域,访问该值即可。
+  Identifier(astPath: AstPath<ESTree.Identifier>) {
+    const { node, scope } = astPath;
+    const name = node.name;
+    // walk identifier
+    // 这个例子中查找的是age变量
+    const variable = scope.search(name);
+    // 返回的是定义的变量对象(age)的值,即18
+    if (variable) return variable.value;
+  },
+};
+export default es5;
+```
+
+### 实践第 4 弹: module.exports = 6
+
+我们先来看看 module.exports = 6 对应的 AST。
+
+![module-exports](./assets/module-exports.png)
+
+从语法树中我们又看到两个陌生的节点类型,来看看它们分别代表什么意思:
 
 #### AssignmentExpression
 
@@ -523,7 +599,7 @@ interface MemberExpression {
 }
 ```
 
-我们先通过定义 module.exports 变量来实践我们上一节的实现。
+我们先来定义 module.exports 变量。
 
 ```ts
 import Scope from "./scope";
@@ -576,16 +652,6 @@ type AstPath<T> = {
 const es5 = {
   // ...
   // 这里我们定义了astPath,新增了scope作用域参数
-  // 标识符节点,我们只要通过访问作用域,访问该值即可。
-  Identifier(astPath: AstPath<ESTree.Identifier>) {
-    const { node, scope } = astPath;
-    const name = node.name;
-    // walk identifier
-    // 这个例子中查找的是module变量
-    const variable = scope.search(name);
-    // 返回我们之前定义的变量对象(module),即{ exports: $exports }
-    if (variable) return variable.value;
-  },
   MemberExpression(astPath: AstPath<ESTree.MemberExpression>) {
     const { node, scope } = astPath;
     const { object, property, computed } = node;
@@ -681,3 +747,59 @@ describe("giao-js es5", () => {
 ```
 
 ![jest](./assets/jest.png)
+
+```js
+var result = 0;
+for (var i = 0; i < 5; i++) {
+  result += 2;
+}
+module.exports = result;
+```
+
+### 实践第 5 弹: for 循环
+
+![for-loop](./assets/for-loop.png)
+
+到这一弹大家都发现了,不同的语法其实对应的就是不同的树节点,我们只要实现对应的节点函数即可.我们先来看看这几个陌生节点的含义.
+
+#### ForStatement
+
+for 循环语句节点，属性 init/test/update 分别表示了 for 语句括号中的三个表达式，初始化值，循环判断条件，每次循环执行的变量更新语句（init 可以是变量声明或者表达式）。
+这三个属性都可以为 null，即 for(;;){}。  
+body 属性用以表示要循环执行的语句。
+
+```ts
+interface ForStatement {
+  type: "ForStatement";
+  init?: VariableDeclaration | Expression | null;
+  test?: Expression | null;
+  update?: Expression | null;
+  body: Statement;
+}
+```
+
+#### UpdateExpression
+
+update 运算表达式节点，即 ++/--，和一元运算符类似，只是 operator 指向的节点对象类型不同，这里是 update 运算符。
+
+```ts
+interface UpdateExpression {
+  type: "UpdateExpression";
+  operator: UpdateOperator;
+  argument: Expression;
+  prefix: boolean;
+}
+```
+
+#### BlockStatement
+
+块语句节点，举个例子：if (...) { // 这里是块语句的内容 }，块里边可以包含多个其他的语句，所以有一个 body 属性，是一个数组，表示了块里边的多个语句。
+
+```ts
+interface BlockStatement {
+  0;
+  type: "BlockStatement";
+  body: Array<Statement>;
+  innerComments?: Array<Comment>;
+}
+```

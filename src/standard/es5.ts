@@ -13,13 +13,6 @@ const es5 = {
       scope.declare(kind, key, value);
     });
   },
-  VariableDeclarator(astPath: AstPath<ESTree.VariableDeclarator>) {
-    const { node, scope } = astPath;
-    const { id, init } = node;
-    const key = (<ESTree.Identifier>id).name;
-    const value = init ? this.visitNode(init, scope) : undefined;
-    scope.defineVar(key, value);
-  },
   Identifier(astPath: AstPath<ESTree.Identifier>) {
     const { node, scope } = astPath;
     const name = node.name;
