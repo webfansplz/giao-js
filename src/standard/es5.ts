@@ -139,9 +139,9 @@ const es5 = {
     const { init, test, update, body } = node;
     const forScope = new Scope("block", scope);
     for (
-      init ? this.visitNode(init, forScope) : undefined;
+      init ? this.visitNode(init, forScope) : null;
       test ? this.visitNode(test, forScope) : true;
-      update ? this.visitNode(update, forScope) : undefined
+      update ? this.visitNode(update, forScope) : null
     ) {
       this.visitNode(body, forScope);
     }

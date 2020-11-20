@@ -666,7 +666,7 @@ const es5 = {
     return obj[prop];
   },
   // 赋值表达式节点
-  AssignmentExpression(astPath: AstPath<ESTree.AssignmentExpression>) {
+  (astPath: AstPath<ESTree.>) {
     const { node, scope } = astPath;
     const { left, operator, right } = node;
     let assignVar;
@@ -803,3 +803,129 @@ interface BlockStatement {
   innerComments?: Array<Comment>;
 }
 ```
+
+废话少说,盘它!!!
+
+```ts
+// standard/es5.ts 实现以上节点方法
+
+import Scope from "../scope";
+import * as ESTree from "estree";
+
+type AstPath<T> = {
+  node: T;
+  scope: Scope;
+};
+
+const es5 = {
+  // ...
+  // for 循环语句节点
+  ForStatement(astPath: AstPath<ESTree.ForStatement>) {
+    const { node, scope } = astPath;
+    const { init, test, update, body } = node;
+    // 这里需要注意的是需要模拟创建一个块级作用域
+    // 前面Scope类实现,var声明在块作用域中会被提升,const/let不会
+    const forScope = new Scope("block", scope);
+    for (
+      // 初始化值
+      // VariableDeclaration
+      init ? this.visitNode(init, forScope) : null;
+      // 循环判断条件(BinaryExpression)
+      // 二元运算表达式,之前已实现,这里不再细说
+      test ? this.visitNode(test, forScope) : true;
+      // 变量更新语句(UpdateExpression)
+      update ? this.visitNode(update, forScope) : null
+    ) {
+      // BlockStatement
+      this.visitNode(body, forScope);
+    }
+  },
+  // update 运算表达式节点
+  // update 运算表达式节点，即 ++/--，和一元运算符类似，只是 operator 指向的节点对象类型不同，这里是 update 运算符。
+  UpdateExpression(astPath: AstPath<ESTree.UpdateExpression>) {
+    const { node, scope } = astPath;
+    // update 运算符，值为 ++ 或 --，配合 update 表达式节点的 prefix 属性来表示前后。
+    const { prefix, argument, operator } = node;
+    let updateVar;
+    // 这里需要考虑参数类型还有一种情况是成员表达式节点
+    // 例: for (var query={count:0}; query.count < 8; query.count++)
+    // LHS查找
+    if (argument.type === "Identifier") {
+      // 标识符类型 直接查找
+      const value = scope.search(argument.name);
+      updateVar = value;
+    } else if (argument.type === "MemberExpression") {
+      // 成员表达式的实现在前面实现过,这里不再细说,一样的套路~
+      const { object, property, computed } = argument;
+      const obj = this.visitNode(object, scope);
+      const key = computed
+        ? this.visitNode(property, scope)
+        : (<ESTree.Identifier>property).name;
+      updateVar = {
+        get value() {
+          return obj[key];
+        },
+        set value(v) {
+          obj[key] = v;
+        },
+      };
+    }
+    return {
+      "++": (v) => {
+        const result = v.value;
+        v.value = result + 1;
+        // preifx? ++i: i++;
+        return prefix ? v.value : result;
+      },
+      "--": (v) => {
+        const result = v.value;
+        v.value = result - 1;
+        // preifx? --i: i--;
+        return prefix ? v.value : result;
+      },
+    }[operator](updateVar);
+  },
+  // 块语句节点
+  // 块语句的实现很简单,模拟创建一个块作用域,然后遍历body属性进行访问即可。
+  BlockStatement(astPath: AstPath<ESTree.BlockStatement>) {
+    const { node, scope } = astPath;
+    const blockScope = new Scope("block", scope);
+    const { body } = node;
+    body.forEach((bodyNode) => {
+      this.visitNode(bodyNode, blockScope);
+    });
+  },
+};
+export default es5;
+```
+
+上 jest 大法验证一哈～
+
+```ts
+test("test for loop", () => {
+  expect(
+    run(`
+      var result = 0;
+      for (var i = 0; i < 5; i++) {
+        result += 2;
+      }
+      module.exports = result;
+    `)
+  ).toBe(10);
+});
+```
+
+![for-loop-jest](./assets/for-loop-jest.png)
+
+你以为这样就结束了吗? 有没有想到还有什么情况没处理? for 循环的中断语句呢?
+
+```js
+var result = 0;
+for (var i = 0; i < 5; i++) {
+  result += 2;
+  break; // break,continue,return
+}
+module.exports = result;
+```
+
+这个处理就交给你了～撸起来!
