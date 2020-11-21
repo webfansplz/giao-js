@@ -35,4 +35,28 @@ describe("giao-js es5", () => {
     `)
     ).toBe(10);
   });
+  test("test for loop break", () => {
+    expect(
+      run(`
+      var result = 0;
+      for (var i = 0; i < 10; i++) {
+        if(result>=6)break;
+        result += 2;
+      }
+      module.exports = result;
+    `)
+    ).toBe(6);
+  });
+  test("test for loop continue", () => {
+    expect(
+      run(`
+      var result = 0;
+      for (var i = 0; i < 10; i++) {
+        if(i%2===0)continue;
+        result += 2;
+      }
+      module.exports = result;
+    `)
+    ).toBe(10);
+  });
 });

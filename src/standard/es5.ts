@@ -1,7 +1,7 @@
 import Scope from "../scope";
 import * as ESTree from "estree";
 import { AstPath } from "../types/index";
-
+import { SignalType, Signal } from "../signal";
 const es5 = {
   VariableDeclaration(astPath: AstPath<ESTree.VariableDeclaration>) {
     const { node, scope } = astPath;
@@ -143,7 +143,10 @@ const es5 = {
       test ? this.visitNode(test, forScope) : true;
       update ? this.visitNode(update, forScope) : null
     ) {
-      this.visitNode(body, forScope);
+      const res = this.visitNode(body, forScope);
+      if (Signal.isBreak(res)) break;
+      if (Signal.isContinue(res)) continue;
+      if (Signal.isReturn(res)) return res.result;
     }
   },
   UpdateExpression(astPath: AstPath<ESTree.UpdateExpression>) {
@@ -185,9 +188,36 @@ const es5 = {
     const { node, scope } = astPath;
     const blockScope = new Scope("block", scope);
     const { body } = node;
-    body.forEach((bodyNode) => {
-      this.visitNode(bodyNode, blockScope);
-    });
+    for (let i = 0; i < body.length; i++) {
+      const res = this.visitNode(body[i], blockScope);
+      if (
+        Signal.isBreak(res) ||
+        Signal.isContinue(res) ||
+        Signal.isReturn(res)
+      ) {
+        return res;
+      }
+    }
+  },
+  BreakStatement() {
+    return new Signal(SignalType.break);
+  },
+  ContinueStatement() {
+    return new Signal(SignalType.continue);
+  },
+  ReturnStatement(astPath: AstPath<ESTree.ReturnStatement>) {
+    const { node, scope } = astPath;
+    return new Signal(
+      SignalType.return,
+      node.argument ? this.visitNode(node.argument, scope) : undefined
+    );
+  },
+  IfStatement(astPath: AstPath<ESTree.IfStatement>) {
+    const { node, scope } = astPath;
+    const { test, consequent, alternate } = node;
+    const testRes = this.visitNode(test, scope);
+    if (testRes) return this.visitNode(consequent, scope);
+    else return alternate ? this.visitNode(alternate, scope) : undefined;
   },
 };
 export default es5;
