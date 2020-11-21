@@ -4,12 +4,12 @@
 
 ## 什么是解释器 (Interpreter) ?
 
-> 解释器是在运行时运行的语言求值器,它动态地执行程序的源代码。它不同于编译器。编译器将语言源代码翻译成机器代码。
+> 解释器是在运行时运行的语言求值器,它动态地执行程序的源代码。
 > 解释器解析源代码,从源代码生成 AST(抽象语法树),遍历 AST 并逐个计算它们。
 
 ## 解释器 (Interpreter) 工作原理
 
-![Interpreter](./assets/giao.png)
+![Interpreter](https://s3.ax1x.com/2020/11/21/D1NMUH.png)
 
 - 词法分析 (Tokenization)
 
@@ -241,7 +241,7 @@ export function run(code: string) {
 
 我们这节来实现 1+1 加法的解释。首先我们通过[AST explorer](https://astexplorer.net/),看看 1+1 这段代码转换后的 AST 结构。
 
-![1+1 ast](./assets/1+1.png)
+![1+1 ast](https://s3.ax1x.com/2020/11/21/D1Ntr8.png)
 
 我们可以看到这段代码中存在 4 种节点类型,下面我们简单的介绍一下它们:
 
@@ -479,7 +479,7 @@ export default Scope;
 
 ### 实践第 3 弹: var age = 18
 
-![var](./assets/var.png)
+![var](https://s3.ax1x.com/2020/11/21/D1N6MV.png)
 
 从语法树中我们可以看到三个陌生的节点类型,来看看它们分别代表什么意思:
 
@@ -568,7 +568,7 @@ export default es5;
 
 我们先来看看 module.exports = 6 对应的 AST。
 
-![module-exports](./assets/module-exports.png)
+![module-exports](https://s3.ax1x.com/2020/11/21/D1NWa4.png)
 
 从语法树中我们又看到两个陌生的节点类型,来看看它们分别代表什么意思:
 
@@ -746,7 +746,9 @@ describe("giao-js es5", () => {
 }
 ```
 
-![jest](./assets/jest.png)
+![jest](https://s3.ax1x.com/2020/11/21/D1NLZD.png)
+
+### 实践第 5 弹: for 循环
 
 ```js
 var result = 0;
@@ -756,9 +758,7 @@ for (var i = 0; i < 5; i++) {
 module.exports = result;
 ```
 
-### 实践第 5 弹: for 循环
-
-![for-loop](./assets/for-loop.png)
+![for-loop](https://s3.ax1x.com/2020/11/21/D1USzt.png)
 
 到这一弹大家都发现了,不同的语法其实对应的就是不同的树节点,我们只要实现对应的节点函数即可.我们先来看看这几个陌生节点的含义.
 
@@ -915,7 +915,7 @@ test("test for loop", () => {
 });
 ```
 
-![for-loop-jest](./assets/for-loop-jest.png)
+![for-loop-jest](https://s3.ax1x.com/2020/11/21/D1UVij.png)
 
 你以为这样就结束了吗? 有没有想到还有什么情况没处理? for 循环的中断语句呢?
 
@@ -928,4 +928,20 @@ for (var i = 0; i < 5; i++) {
 module.exports = result;
 ```
 
-这个处理就交给你了～撸起来!
+感兴趣的小伙伴可以自己动手试试,或者戳[源码地址](https://github.com/webfansplz/giao-js)
+
+## 结语
+
+[giao-js](https://github.com/webfansplz/giao-js)目前只实现了几个语法解释,本文只是提供一个思路。
+
+有兴趣的同学可以查看[完整代码](https://github.com/webfansplz/giao-js)。
+
+觉得有帮助到你的话,点个 star 支持下作者 ❤️ ～
+
+## 参考
+
+[Build a JS Interpreter in JavaScript Using Acorn as a Parser](https://blog.bitsrc.io/build-a-js-interpreter-in-javascript-using-acorn-as-a-parser-5487bb53390c)
+
+[jsjs](https://github.com/bramblex/jsjs)
+
+[使用 Acorn 来解析 JavaScript](https://juejin.cn/post/6844903450287800327)
