@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    Hello giao-js
+  </body>
+  <script src="../dist/giao.js"></script>
+  <script>
+    // assign
+    console.log(giao.run(`const i=2,j=6;module.exports=i*j`));
+    // regex
+    console.log(giao.run(`module.exports = /giao/.test('giao-js')`));
+    // for loop
+    console.log(
+      giao.run(`var result = 0;
+      for (var i = 0; i < 10; i++) {
+        if(i%2===0)continue;
+        result += 2;
+      }
+      module.exports = result;`)
+    );
+  </script>
+</html>
