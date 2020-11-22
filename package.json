@@ -2,7 +2,7 @@
   "name": "giao-js",
   "version": "1.0.0",
   "description": "Javascript Interpreter",
-  "main": "index.js",
+  "main": "./dist/giao.js",
   "scripts": {
     "test": "jest",
     "dev": "rollup -c rollup.config.js --watch",
