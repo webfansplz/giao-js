@@ -45,7 +45,7 @@ var a = 1;
 [
   ("var": "keyword"),
   ("a": "identifier"),
-  ("=": "operator"),
+  ("=": "assignment"),
   ("1": "literal"),
   (";": "separator"),
 ];
