@@ -37,7 +37,7 @@ Javascript is the best language in the world
 
 这是分析和理解句子的第一阶段。
 
-词法分析是由**词法分析器（Lexical Analyser）**完成的,词法分析器会扫描（scanning）代码,提取词法单元。
+词法分析是由**词法分析器**完成的,词法分析器会扫描（scanning）代码,提取词法单元。
 
 ```js
 var a = 1;
@@ -79,7 +79,7 @@ Javascript 在语法中是一个主语名词,其余的是一个没有什么意�
 Subject(Noun) -> Predicate -> Object
 ```
 
-语法解析是由**语法解析器 (Syntax Parser)**完成的,它会将上一步生成的 Token,根据语法规则,转为抽象语法树(AST)。
+语法解析是由**语法解析器**完成的,它会将上一步生成的 Token,根据语法规则,转为抽象语法树(AST)。
 
 ```js
 {
@@ -940,8 +940,8 @@ module.exports = result;
 
 ## 参考
 
-[Build a JS Interpreter in JavaScript Using Acorn as a Parser](https://blog.bitsrc.io/build-a-js-interpreter-in-javascript-using-acorn-as-a-parser-5487bb53390c)
-
 [jsjs](https://github.com/bramblex/jsjs)
 
 [使用 Acorn 来解析 JavaScript](https://juejin.cn/post/6844903450287800327)
+
+[Build a JS Interpreter in JavaScript Using Acorn as a Parser](https://blog.bitsrc.io/build-a-js-interpreter-in-javascript-using-acorn-as-a-parser-5487bb53390c)
